@@ -1,7 +1,7 @@
+import requests
+
 from flask import Flask, request
 import lxml
-# from .openai_client import get_edits
-import requests
 from readability import Document
 
 app = Flask(__name__)
@@ -22,6 +22,7 @@ def api():
     Will figure more out later like credentials.
     """
     obj = request.get_json()
+    url = obj["url"]
     html = obj.get("html", requests.get(obj["url"]).text)
     document = Document(html)
     tree = lxml.html.fromstring(document.summary())
@@ -33,4 +34,10 @@ def api():
             elem.attrib.clear()
             next_level.extend(elem)
         this_level = next_level
-    return str(lxml.html.tostring(tree)).replace("<html><body>", "").replace("</body></html>", "")
+    text = str(lxml.html.tostring(tree)).replace("<html><body>", "").replace("</body></html>", "")
+    result = {
+        "url": obj["url"],
+        "text": text
+    }
+    app.logger.info('Page %s simplified successfully', url)
+    return result
