@@ -30,11 +30,10 @@ def api():
     while this_level:
         next_level = []
         for elem in this_level:
-            print(elem)
             elem.attrib.clear()
             next_level.extend(elem)
         this_level = next_level
-    text = str(lxml.html.tostring(tree)).replace("<html><body>", "").replace("</body></html>", "")
+    text = str(lxml.html.tostring(tree.body)).replace("<body>", "").replace("</body>", "")
     result = {
         "url": obj["url"],
         "text": text

@@ -6,7 +6,7 @@ format = "%(asctime)s %(clientip)-15s %(user)-8s %(message)s"
 logging.basicConfig(format=format, level=logging.INFO)
 
 def get_edits_call(endpoint):
-    data = post(endpoint, json={"url": "https://medium.com/inside-machine-learning/what-is-a-transformer-d07dd1fbec04"})
+    data = post(endpoint, json={"url": "https://medium.com/inside-machine-learning/what-is-a-transformer-d07dd1fbec04"}).json()
     logger.info(data)
 
 def test_remote():
