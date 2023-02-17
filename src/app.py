@@ -1,5 +1,8 @@
 from flask import Flask, request
-from .openai_client import get_edits
+import lxml
+# from .openai_client import get_edits
+import requests
+from readability import Document
 
 app = Flask(__name__)
 
@@ -9,11 +12,25 @@ def hello():
 
 @app.route("/", methods=["POST"])
 def api():
-    req = request.get_json()
-    if "text" not in req:
-        return "Please provide the input in the \"text\" field.", 400
-    text = req["text"]
-    n = req.get("n", 1)
-    choices = get_edits(text, n=n)
-    return [choice.text.strip() for choice in choices if choice["finish_reason"] == "stop"]
-
+    """
+    Format:
+    {
+        "utl": "https://www.google.com",
+        "html": "<html><body><p>The quick brown fox jumped over the lazy dog.</p></body></html>"",
+        "body": "<p>The quick brown fox jumped over the lazy dog.</p>"
+    }
+    Will figure more out later like credentials.
+    """
+    obj = request.get_json()
+    html = obj.get("html", requests.get(obj["url"]).text)
+    document = Document(html)
+    tree = lxml.html.fromstring(document.summary())
+    this_level: list[lxml.html] = [tree]
+    while this_level:
+        next_level = []
+        for elem in this_level:
+            print(elem)
+            elem.attrib.clear()
+            next_level.extend(elem)
+        this_level = next_level
+    return str(lxml.html.tostring(tree)).replace("<html><body>", "").replace("</body></html>", "")
