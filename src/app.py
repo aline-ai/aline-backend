@@ -30,7 +30,8 @@ def api():
     while this_level:
         next_level = []
         for elem in this_level:
-            elem.attrib.clear()
+            if elem.tag not in ("figure", "a"):
+                elem.attrib.clear()
             next_level.extend(elem)
         this_level = next_level
     text = lxml.html.tostring(tree.body).decode('utf-8').replace("<body>", "").replace("</body>", "")
