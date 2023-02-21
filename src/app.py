@@ -1,6 +1,6 @@
 import requests
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import lxml
 from readability import Document
 
@@ -33,10 +33,10 @@ def api():
             elem.attrib.clear()
             next_level.extend(elem)
         this_level = next_level
-    text = str(lxml.html.tostring(tree.body)).replace("<body>", "").replace("</body>", "")
+    text = lxml.html.tostring(tree.body).decode('utf-8').replace("<body>", "").replace("</body>", "")
     result = {
         "url": obj["url"],
         "text": text
     }
     app.logger.info('Page %s simplified successfully', url)
-    return result
+    return jsonify(result)
