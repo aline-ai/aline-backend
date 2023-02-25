@@ -40,7 +40,7 @@ def simplify():
                 elem.attrib.clear()
             next_level.extend(elem)
         this_level = next_level
-    text = f"<h1>{document.title()}</h1></br>" + lxml.html.tostring(tree.body).decode('utf-8').replace("<body>", "").replace("</body>", "")
+    text = f"<h1>{title}</h1></br>" + lxml.html.tostring(tree.body).decode('utf-8').replace("<body>", "").replace("</body>", "")
     result = {
         "url": obj["url"],
         "text": text
