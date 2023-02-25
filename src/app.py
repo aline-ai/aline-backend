@@ -28,6 +28,9 @@ def simplify():
     url = obj["url"]
     html = obj.get("html", requests.get(obj["url"]).text)
     document = Document(html)
+    title = document.title()
+    if title == "[no-title]":
+        title = obj["title"]
     tree = lxml.html.fromstring(document.summary())
     this_level: list[lxml.html] = [tree]
     while this_level:
