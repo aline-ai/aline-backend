@@ -43,6 +43,21 @@ def simplify():
     app.logger.info('Page %s simplified successfully', url)
     return jsonify(result)
 
+prompt = """Given the context from the article from "{url}" and the notes the user has taken, complete the note:
+
+===START===
+
+{context}
+
+===END===
+
+Complete the following notes a user is taking in HTML:
+
+===START===
+
+{notes}
+"""
+
 @app.route("/autocomplete", methods=["POST"])
 def autocomplete():
     """
@@ -59,7 +74,7 @@ def autocomplete():
     context = obj["context"]
     completion = openai.Completion.create(
         engine="text-davinci-003", 
-        prompt=notes
+        prompt=prompt.format(context=context, notes=notes),
     )
     return jsonify({
         "suggestion": completion
