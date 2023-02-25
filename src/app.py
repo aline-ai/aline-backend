@@ -55,7 +55,7 @@ Given the context from the article from "{url}" and the notes the user has taken
 
 ===END===
 
-Complete the following notes a user is taking in HTML:
+Complete the following notes a user is taking in HTML. Keep each line short and simple.
 
 ===START===
 
