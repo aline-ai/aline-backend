@@ -1,0 +1,18 @@
+input_variables:
+    ["adjective", "content"]
+template: 
+    """
+    Given the context from the article from "{url}" and the notes the user has taken, complete the note:
+
+    ===START===
+
+    {context}
+
+    ===END===
+
+    Complete the following notes a user is taking in HTML:
+
+    ===START===
+
+    {notes}
+    """

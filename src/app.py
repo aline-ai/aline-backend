@@ -3,6 +3,8 @@ import requests
 from flask import Flask, request, jsonify
 import lxml
 from readability import Document
+# from langchain.prompts import load_prompt
+
 import openai
 
 app = Flask(__name__)
@@ -43,7 +45,9 @@ def simplify():
     app.logger.info('Page %s simplified successfully', url)
     return jsonify(result)
 
-prompt = """Given the context from the article from "{url}" and the notes the user has taken, complete the note:
+prompt = \
+"""
+Given the context from the article from "{url}" and the notes the user has taken, complete the note:
 
 ===START===
 
@@ -74,7 +78,7 @@ def autocomplete():
     context = obj["context"]
     completion = openai.Completion.create(
         engine="text-davinci-003", 
-        prompt=prompt.format(context=context, notes=notes),
+        prompt=prompt.format(url=url, context=context, notes=notes),
     )
     return jsonify({
         "suggestion": completion
