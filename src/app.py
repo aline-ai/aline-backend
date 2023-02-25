@@ -3,6 +3,7 @@ import requests
 from flask import Flask, request, jsonify
 import lxml
 from readability import Document
+import openai
 
 app = Flask(__name__)
 
@@ -56,6 +57,10 @@ def autocomplete():
     url = obj["url"]
     notes = obj["notes"]
     context = obj["context"]
+    completion = openai.Completion.create(
+        engine="text-davinci-003", 
+        prompt=notes
+    )
     return jsonify({
-        "suggestion": "Not implemented yet."
+        "suggestion": completion
     })
