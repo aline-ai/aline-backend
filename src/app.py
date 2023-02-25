@@ -79,7 +79,8 @@ def autocomplete():
     completion = openai.Completion.create(
         engine="text-davinci-003", 
         prompt=prompt.format(url=url, context=context, notes=notes),
+        max_tokens=500
     )
     return jsonify({
-        "suggestion": completion
+        "suggestion": completion.choices[0].text
     })
