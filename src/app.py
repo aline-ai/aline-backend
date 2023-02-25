@@ -42,8 +42,8 @@ def simplify():
     app.logger.info('Page %s simplified successfully', url)
     return jsonify(result)
 
-@app.route("/completion", methods=["POST"])
-def completion():
+@app.route("/autocomplete", methods=["POST"])
+def autocomplete():
     """
     Format:
     {
@@ -56,4 +56,6 @@ def completion():
     url = obj["url"]
     notes = obj["notes"]
     context = obj["context"]
-    return "Not implemented yet."
+    return jsonify({
+        "suggestion": "Not implemented yet."
+    })
