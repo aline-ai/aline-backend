@@ -10,12 +10,12 @@ app = Flask(__name__)
 def hello():
     return "Hello World! Make a request to /api with the input in the \"text\" field to see suggested edits."
 
-@app.route("/", methods=["POST"])
-def api():
+@app.route("/simplify", methods=["POST"])
+def simplify():
     """
     Format:
     {
-        "utl": "https://www.google.com",
+        "url": "https://www.google.com",
         "html": "<html><body><p>The quick brown fox jumped over the lazy dog.</p></body></html>"",
         "body": "<p>The quick brown fox jumped over the lazy dog.</p>"
     }
@@ -41,3 +41,19 @@ def api():
     }
     app.logger.info('Page %s simplified successfully', url)
     return jsonify(result)
+
+@app.route("/completion", methods=["POST"])
+def completion():
+    """
+    Format:
+    {
+        "url": "https://www.google.com",
+        "notes": "<p>This is a note.,</p>",
+        "context": "<html><body><p>The quick brown fox jumped over the lazy dog.</p></body></html>"",
+    }
+    """
+    obj = request.get_json()
+    url = obj["url"]
+    notes = obj["notes"]
+    context = obj["context"]
+    return "Not implemented yet."
