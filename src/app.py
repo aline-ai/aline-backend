@@ -50,7 +50,12 @@ def simplify():
 
 prompt = \
 """
-Given the context from the article from "{url}" and the notes the user has taken, complete the note:
+Given the article from "{url}", complete the notes below in HTML. Pay attention to the following:
+* Keep each line short, simple and concise 
+* Keep every line to one sentence and break into multiple lines whenever possible
+* Do not escape charactes like apostrophe, quotes, etc
+
+Article:
 
 ===START===
 
@@ -58,9 +63,7 @@ Given the context from the article from "{url}" and the notes the user has taken
 
 ===END===
 
-Complete the following notes a user is taking in HTML abiding to the following:
-* Keep each line short, simple and concise and break into multiple lines whenever possible
-* Do not escape charactes like apostrophe, quotes, etc
+Notes:
 
 ===START===
 
