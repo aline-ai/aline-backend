@@ -3,7 +3,7 @@ import requests
 from flask import Flask, request, jsonify
 import lxml
 from readability import Document
-# from langchain.prompts import load_prompt
+from langchain.prompts import load_prompt
 
 import openai
 
@@ -48,28 +48,6 @@ def simplify():
     app.logger.info('Page %s simplified successfully', url)
     return jsonify(result)
 
-prompt = \
-"""
-Given the article from "{url}", complete the notes below in HTML. Pay attention to the following:
-* Keep each line short, simple and concise 
-* Keep every line to one sentence and break into multiple lines whenever possible
-* Do not escape charactes like apostrophe, quotes, etc
-
-Article:
-
-===START===
-
-{context}
-
-===END===
-
-Notes:
-
-===START===
-
-{notes}
-"""
-
 @app.route("/autocomplete", methods=["POST"])
 def autocomplete():
     """
@@ -84,9 +62,10 @@ def autocomplete():
     url = obj["url"]
     notes = obj["notes"]
     context = obj["context"]
+    prompt = load_prompt("src/prompts/v1.yaml")
     completion = openai.Completion.create(
         engine="text-davinci-003", 
-        prompt=prompt.format(url=url, context=context, notes=notes),
+        prompt = prompt.format(url=url, context=context, notes=notes),
         max_tokens=2000,
         stop=["===END==="],
     )

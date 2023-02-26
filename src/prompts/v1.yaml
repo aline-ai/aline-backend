@@ -1,8 +1,13 @@
 input_variables:
-    ["adjective", "content"]
-template: 
-    """
-    Given the context from the article from "{url}" and the notes the user has taken, complete the note:
+    ["url", "context", "notes"]
+template: |
+    Given the article from "{url}", complete the notes below in HTML, according to the following:
+    * Keep the response short
+    * Keep each line short, simple and concise 
+    * Keep every line to one sentence and break into multiple lines whenever possible
+    * Do not escape charactes like apostrophe, quotes, etc
+
+    Article:
 
     ===START===
 
@@ -10,9 +15,8 @@ template:
 
     ===END===
 
-    Complete the following notes a user is taking in HTML:
+    Notes:
 
     ===START===
 
     {notes}
-    """
