@@ -40,6 +40,8 @@ def simplify():
                 elem.attrib.clear()
             next_level.extend(elem)
         this_level = next_level
+    while len(tree) == 1 and tree[0].tag == "p":
+        tree = tree[0]
     text = f"<h1>{title}</h1></br>" + lxml.html.tostring(tree.body).decode('utf-8').replace("<body>", "").replace("</body>", "")
     result = {
         "url": obj["url"],
