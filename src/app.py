@@ -42,7 +42,7 @@ def simplify():
         this_level = next_level
     while len(tree) == 1 and tree[0].tag != "p":
         tree = tree[0]
-    text = f"<h1>{title}</h1></br>" + lxml.html.tostring(tree).decode('utf-8').replace("\n", "").replace("\r", "")
+    text = f"<h1>{title}</h1></br>" + "".join([lxml.html.tostring(child) for child in tree]).decode('utf-8').replace("\n", "").replace("\r", "")
     result = {
         "url": obj["url"],
         "text": text
