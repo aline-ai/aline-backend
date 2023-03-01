@@ -66,8 +66,8 @@ def autocomplete():
     context = obj["context"]
     prompt = load_prompt("src/prompts/v1.yaml")
     completion = openai.Completion.create(
-        # engine="text-davinci-003", 
-        engine="text-curie-001", 
+        engine="text-davinci-003", 
+        # engine="text-curie-001", 
         prompt = prompt.format(url=url, context=context, notes=notes),
         max_tokens=2000,
         stop=["===END==="],
