@@ -8,7 +8,7 @@ CURSOR_INDICATOR = " CURSOR_INDICATOR "
 def autocomplete(url, context, notes):
     context_in_markdown = markdownify(context)
     notes_in_markdown = markdownify(notes).rstrip()
-    prompt = prompt_template.format(url=url, context=context_in_markdown[len(context_in_markdown) // 2], notes=notes_in_markdown)
+    prompt = prompt_template.format(url=url, context=context_in_markdown, notes=notes_in_markdown)
     completion = openai.Completion.create(
         engine="text-davinci-003", 
         prompt = prompt,
