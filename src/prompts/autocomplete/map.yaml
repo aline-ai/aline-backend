@@ -1,0 +1,14 @@
+input_variables:
+  ["context", "question"]
+template: |
+  Use the following portion of a long article to see if any of the text is relevant complete the incomplete notes. 
+  Return any relevant text *verbatim*.
+
+  <!-- START OF ARTICLE SECTION -->
+  {context}
+  <!-- END OF ARTICLE SECTION -->
+
+  <!-- START OF INCOMPLETE NOTES -->
+  {question}
+  <!-- END OF INCOMPLETE NOTES -->
+  Relevant text verbatim, if any:
