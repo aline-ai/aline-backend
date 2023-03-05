@@ -6,8 +6,8 @@ import openai
 prompt_template = load_prompt("src/prompts/markdown_completion.yaml")
 CURSOR_INDICATOR = " CURSOR_INDICATOR "
 def autocomplete(url, context, notes):
-    context_in_markdown = markdownify(context)
-    notes_in_markdown = markdownify(notes).rstrip()
+    context_in_markdown = markdownify(context, heading_style="atx")
+    notes_in_markdown = markdownify(notes, heading_style="atx").rstrip()
     prompt = prompt_template.format(url=url, context=context_in_markdown, notes=notes_in_markdown)
     completion = openai.Completion.create(
         engine="text-davinci-003", 
