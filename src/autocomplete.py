@@ -1,5 +1,6 @@
 from markdownify import markdownify
 import mistletoe
+import html
 
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
@@ -48,4 +49,4 @@ def autocomplete(_url, context, notes):
     completed_notes = notes_in_md + CURSOR_INDICATOR + completion
     completed_notes_html = mistletoe.markdown(completed_notes).replace("\n", "")
     _notes_user, notes_completion = completed_notes_html.split(CURSOR_INDICATOR.strip())
-    return notes_completion.strip()
+    return html.unescape(notes_completion.strip()).replace("<li>", "<li><p>").replace("</li>", "</p></li>")
