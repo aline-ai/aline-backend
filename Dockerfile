@@ -12,7 +12,7 @@ COPY . ./
 
 # Install production dependencies.
 # RUN pip install --no-cache-dir -r requirements.txt
-RUN apt-get install build-essential -y
+RUN apt-get install gcc-c++ build-essential -y
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-dev
