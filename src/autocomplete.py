@@ -1,9 +1,11 @@
+from typing import Any, Iterable
 from markdownify import markdownify
 import mistletoe
 import html
 
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.embeddings.openai import OpenAIEmbeddings, Embeddings
+from langchain.vectorstores import Chroma,  VectorStore
+# from langchain.vectorstores import Qdrant
 from langchain.chains import VectorDBQA
 from langchain.llms import OpenAI, OpenAIChat
 from langchain.prompts import load_prompt
@@ -12,14 +14,35 @@ from langchain.text_splitter import MarkdownTextSplitter
 from dotenv import load_dotenv
 
 load_dotenv() 
-import os
-print(os.environ.get("OPENAI_API_KEY"))
 
-# df8d4d92-f944-401a-9889-253e33dace6e
+Document = Any
 
-# index = pinecone.Index("langchain-demo")
-# embeddings = OpenAIEmbeddings()
-# vectorstore = Pinecone(index, embeddings.embed_query, "text")
+class LinearSearchVectorStore(VectorStore):
+    texts: list[str] = 0
+
+    def add_texts(self, texts: Iterable[str], metadatas: list[dict] | None = None, **kwargs: Any) -> list[str]:
+        self.texts.extend(texts)
+        return list(len(self.texts) - len(texts), range(len(self.texts)))
+    
+    def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> list[Document]:
+        pass
+
+    def max_marginal_relevance_search(self, query: str, k: int = 4, fetch_k: int = 20) -> list[Document]:
+        # return super().max_marginal_relevance_search(query, k, fetch_k) 
+        pass
+
+    def max_marginal_relevance_search_by_vector(self, embedding: list[float], k: int = 4, fetch_k: int = 20) -> list[Document]:
+        pass
+
+    def from_texts(
+        self, 
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict] | None = None,
+        **kwargs: Any,
+    ) -> VectorStore:
+        pass
+
 
 CURSOR_INDICATOR = " CURSOR_INDICATOR"
 def autocomplete(_url, context, notes):
@@ -31,34 +54,29 @@ def autocomplete(_url, context, notes):
 
     text_splitter = MarkdownTextSplitter(chunk_size=2048)
     documents = text_splitter.create_documents([context_in_md])
+    
+    llm = OpenAIChat(max_tokens=1024, verbose=True)
 
-    print(len(documents[0]))
-    print(len(documents))
-
-    # Refactor this mess
-    embeddings = OpenAIEmbeddings()
-    docsearch = Chroma.from_documents(documents, embeddings)
-    qa = VectorDBQA.from_chain_type(
-        llm=OpenAI(
-            max_tokens=1024, 
-            verbose=True
-        ), 
-        chain_type="map_reduce", 
-        vectorstore=docsearch, 
-        return_source_documents=True
-    )
-    # qa.verbose = True
-    # qa.combine_documents_chain.verbose = True
-    # qa.combine_documents_chain.llm_chain.verbose = True
-    # qa.combine_documents_chain.combine_document_chain.llm_chain.verbose = True
-    # qa.combine_documents_chain.llm_chain.llm.model_name = "text-curie-001"
-    qa.combine_documents_chain.combine_document_chain.llm_chain.llm = OpenAIChat(max_tokens=1024, verbose=True)
-    qa.combine_documents_chain.combine_document_chain.llm_chain.llm.model_kwargs = {"stop": ["===END==="]}
-    qa.combine_documents_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/map.yaml")
-    qa.combine_documents_chain.combine_document_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
-
-
-    completion = qa({"query": notes})["result"]
+    if len(documents) > 1:
+        # Refactor this mess
+        embeddings = OpenAIEmbeddings()
+        # TODO: Use Qdrant or something that doesn't require like an hour to build
+        # docsearch = Qdrant.from_documents(documents, embeddings)
+        docsearch = Chroma.from_documents(documents, embeddings)
+        qa = VectorDBQA.from_chain_type(
+            llm=llm, 
+            chain_type="map_reduce", 
+            vectorstore=docsearch, 
+            return_source_documents=True
+        )
+        qa.combine_documents_chain.combine_document_chain.llm_chain.llm = llm
+        qa.combine_documents_chain.combine_document_chain.llm_chain.llm.model_kwargs = {"stop": ["===END==="]}
+        qa.combine_documents_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/map.yaml")
+        qa.combine_documents_chain.combine_document_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
+        completion = qa({"query": notes})["result"]
+    else:
+        prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
+        completion = llm(prompt.format(question=notes_in_md, summaries=context_in_md))
 
     # Postprocess the prompt to return output html
     completed_notes = notes_in_md + CURSOR_INDICATOR + completion
