@@ -9,6 +9,10 @@ from langchain.llms import OpenAI, OpenAIChat
 from langchain.prompts import load_prompt
 from langchain.text_splitter import MarkdownTextSplitter
 
+from dotenv import load_dotenv
+
+load_dotenv() 
+
 CURSOR_INDICATOR = " CURSOR_INDICATOR"
 def autocomplete(_url, context, notes):
     # TODO: Deal with case where notes is empty

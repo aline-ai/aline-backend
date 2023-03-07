@@ -16,7 +16,7 @@ COPY . ./
 # RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
-RUN poetry install --only main
+RUN poetry install --without dev
 
 # Run the web service on container startup. Here we use the gunicorn
 # webserver, with one worker process and 8 threads.
