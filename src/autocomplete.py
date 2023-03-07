@@ -21,6 +21,8 @@ def autocomplete(_url, context, notes):
     context_in_md = markdownify(context, heading_style="atx")
     notes_in_md = markdownify(notes, heading_style="atx").rstrip()
 
+    print(context)
+
     text_splitter = MarkdownTextSplitter()
     documents = text_splitter.create_documents([context_in_md])
 
