@@ -2,6 +2,8 @@
 # https://hub.docker.com/_/python
 FROM python:3.10-slim
 
+RUN apt-get update && apt-get install build-essential -y
+
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True
 
@@ -12,10 +14,9 @@ COPY . ./
 
 # Install production dependencies.
 # RUN pip install --no-cache-dir -r requirements.txt
-RUN apt-get install gcc-c++ -y
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev
+RUN poetry install --only main
 
 # Run the web service on container startup. Here we use the gunicorn
 # webserver, with one worker process and 8 threads.
