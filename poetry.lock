@@ -1605,8 +1605,8 @@ cffi = ["cffi (>=1.11)"]
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">3.10.9,<4.0"
-content-hash = "c3e18cfb6c0b09fc093d128bca1885597e506bd6cd88b546b5a67a3e99a91752"
+python-versions = ">3.10.9,<3.12"
+content-hash = "0684c92defe9385247623554c0e6f8b04ef5ac55c27f5742962b7f0a43b5245a"
 
 [metadata.files]
 aiohttp = [

@@ -12,6 +12,14 @@ from langchain.text_splitter import MarkdownTextSplitter
 from dotenv import load_dotenv
 
 load_dotenv() 
+import os
+print(os.environ.get("OPENAI_API_KEY"))
+
+# df8d4d92-f944-401a-9889-253e33dace6e
+
+# index = pinecone.Index("langchain-demo")
+# embeddings = OpenAIEmbeddings()
+# vectorstore = Pinecone(index, embeddings.embed_query, "text")
 
 CURSOR_INDICATOR = " CURSOR_INDICATOR"
 def autocomplete(_url, context, notes):
@@ -21,10 +29,10 @@ def autocomplete(_url, context, notes):
     context_in_md = markdownify(context, heading_style="atx")
     notes_in_md = markdownify(notes, heading_style="atx").rstrip()
 
-    print(context)
-
-    text_splitter = MarkdownTextSplitter()
+    text_splitter = MarkdownTextSplitter(chunk_size=2048)
     documents = text_splitter.create_documents([context_in_md])
+
+    print(len(documents))
 
     # Refactor this mess
     embeddings = OpenAIEmbeddings()
