@@ -32,6 +32,7 @@ def autocomplete(_url, context, notes):
     text_splitter = MarkdownTextSplitter(chunk_size=2048)
     documents = text_splitter.create_documents([context_in_md])
 
+    print(len(documents[0]))
     print(len(documents))
 
     # Refactor this mess
