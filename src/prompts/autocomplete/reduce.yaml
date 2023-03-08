@@ -18,6 +18,7 @@ template: |
   * The notes will be elaborate and detailed, but will not generate new section headers
   * Each line will be kept short, simple and concise, and will not exceed 80 characters
   * Multiple clauses or sentences will ALWAYS be broken into multiple lines 
+  * Only the next section of notes will be completed
 
   ===START===
   {question}
