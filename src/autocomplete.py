@@ -4,9 +4,7 @@ import mistletoe
 import html
 
 from langchain.embeddings.openai import OpenAIEmbeddings, Embeddings
-# from langchain.vectorstores import Pinecone, VectorStore
 from langchain.vectorstores import Chroma,  VectorStore
-# from langchain.vectorstores import Qdrant
 from langchain.chains import VectorDBQA
 from langchain.llms import OpenAI, OpenAIChat
 from langchain.prompts import load_prompt
@@ -66,11 +64,9 @@ def autocomplete(_url, context, notes):
         # Refactor this mess
         embeddings = OpenAIEmbeddings()
         # TODO: Use Qdrant or something that doesn't require like an hour to build
-        # docsearch = Qdrant.from_documents(documents, embeddings, host="https://fbf55977-79ae-48c2-a691-74ce7b589764.us-east-1-0.aws.cloud.qdrant.io", api_key="L47voMiazaOrenR-Dm9SWwxTBGIoS0LU5LqLYMo2V9PRtfqRtIx_Iw")
         docsearch = Chroma.from_documents(documents, embeddings)
-        # docsearch = Pinecone.from_documents(documents, embeddings, index_name="aline", api_key="1a8e5e99-115c-4ab8-814e-4cfab13efb17")
         qa = VectorDBQA.from_chain_type(
-            llm=llm, 
+            llm=OpenAI(max_tokens=1024, verbose=True), 
             chain_type="map_reduce", 
             vectorstore=docsearch, 
             return_source_documents=True
@@ -79,12 +75,12 @@ def autocomplete(_url, context, notes):
         qa.combine_documents_chain.combine_document_chain.llm_chain.llm.model_kwargs = {"stop": ["===END==="]}
         qa.combine_documents_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/map.yaml")
         qa.combine_documents_chain.combine_document_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
-        completion = qa({"query": notes})["result"]
+        completion: str = qa({"query": notes})["result"]
     else:
         prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
         completion = llm(prompt.format(question=notes_in_md, summaries=context_in_md))
     
-    completion, _ = completion.split("===END===")
+    completion, *_ = completion.split("===END===")
 
     # Postprocess the prompt to return output html
     completed_notes = notes_in_md + CURSOR_INDICATOR + completion
