@@ -85,7 +85,7 @@ def autocomplete(_url, context, notes):
     
     if len(encoding.encode(completion)) > 100: # If stop sequence was reason of termination
         if "\n" in completion:
-            completion = completion[:completion.find("\n")]
+            completion = completion[:completion.rfind("\n")]
     
     if notes_in_md.rstrip().endswith("*") and completion.startswith("*"):
         completion = completion[1:]
