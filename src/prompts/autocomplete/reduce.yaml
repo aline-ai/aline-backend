@@ -10,6 +10,7 @@ template: |
   The following are a small section of notes written according to the following:
   * The notes are based on the context, *not* on prior knowledge
     * An answer will *not* be written if the answer is not found in the long article
+    * Nothing will be written if nothing is relevant
   * The notes start at the start token (===START===) and end at the end token (===END===)
   * Github-style markdown syntax will be used to format the notes
     * Lists, which start with astericks (*) will be used dominantly to organize the notes
