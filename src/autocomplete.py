@@ -11,6 +11,7 @@ from langchain.prompts import load_prompt
 from langchain.text_splitter import MarkdownTextSplitter
 
 from dotenv import load_dotenv
+import tiktoken
 
 load_dotenv() 
 
@@ -46,6 +47,7 @@ class LinearSearchVectorStore(VectorStore):
         self.add_documents(texts, metadatas)
         return self
 
+encoding = tiktoken.get_encoding("cl100k_base")
 
 CURSOR_INDICATOR = " CURSOR_INDICATOR"
 def autocomplete(_url, context, notes):
@@ -58,28 +60,33 @@ def autocomplete(_url, context, notes):
     text_splitter = MarkdownTextSplitter(chunk_size=2048)
     documents = text_splitter.create_documents([context_in_md])
     
-    llm = OpenAIChat(max_tokens=1024, verbose=True)
+    llm = OpenAIChat(max_tokens=128, verbose=True)
 
+    # set up streaming to cancel at a certain point
     if len(documents) > 1:
         # Refactor this mess
         embeddings = OpenAIEmbeddings()
         # TODO: Use Qdrant or something that doesn't require like an hour to build
         docsearch = Chroma.from_documents(documents, embeddings)
         qa = VectorDBQA.from_chain_type(
-            llm=OpenAI(max_tokens=1024, verbose=True), 
+            llm=OpenAI(max_tokens=1024, verbose=True), # Make this also chat
             chain_type="map_reduce", 
             vectorstore=docsearch, 
-            return_source_documents=True
+            return_source_documents=True,
         )
         qa.combine_documents_chain.combine_document_chain.llm_chain.llm = llm
         qa.combine_documents_chain.combine_document_chain.llm_chain.llm.model_kwargs = {"stop": ["===END==="]}
         qa.combine_documents_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/map.yaml")
         qa.combine_documents_chain.combine_document_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
-        completion: str = qa({"query": notes})["result"]
+        completion: str = qa({"query": notes_in_md})["result"]
     else:
         prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
         completion = llm(prompt.format(question=notes_in_md, summaries=context_in_md))
     
+    if len(encoding.encode(completion)) > 100: # If stop sequence was reason of termination
+        if "\n" in completion:
+            completion = completion[:completion.find("\n")]
+
     completion, *_ = completion.split("===END===")
 
     # Postprocess the prompt to return output html
