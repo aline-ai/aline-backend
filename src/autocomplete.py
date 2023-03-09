@@ -63,13 +63,13 @@ def autocomplete(_url, context, notes):
     llm = OpenAIChat(max_tokens=128, verbose=True)
 
     # set up streaming to cancel at a certain point
-    if len(documents) > 1:
+    if len(documents) > 4:
         # Refactor this mess
         embeddings = OpenAIEmbeddings()
         # TODO: Use Qdrant or something that doesn't require like an hour to build
         docsearch = Chroma.from_documents(documents, embeddings)
         qa = VectorDBQA.from_chain_type(
-            llm=OpenAI(max_tokens=2048, verbose=True), # Make this also chat
+            llm=OpenAI(max_tokens=2048, verbose=True), # Make this also chat or fine-tune curie to do this
             chain_type="map_reduce", 
             vectorstore=docsearch, 
             return_source_documents=True,
