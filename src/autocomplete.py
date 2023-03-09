@@ -69,7 +69,7 @@ def autocomplete(_url, context, notes):
         # TODO: Use Qdrant or something that doesn't require like an hour to build
         docsearch = Chroma.from_documents(documents, embeddings)
         qa = VectorDBQA.from_chain_type(
-            llm=OpenAI(max_tokens=1024, verbose=True), # Make this also chat
+            llm=OpenAI(max_tokens=2048, verbose=True), # Make this also chat
             chain_type="map_reduce", 
             vectorstore=docsearch, 
             return_source_documents=True,
@@ -86,6 +86,9 @@ def autocomplete(_url, context, notes):
     if len(encoding.encode(completion)) > 100: # If stop sequence was reason of termination
         if "\n" in completion:
             completion = completion[:completion.find("\n")]
+    
+    if notes_in_md.rstrip().endswith("*") and completion.startswith("*"):
+        completion = completion[1:]
 
     completion, *_ = completion.split("===END===")
 
