@@ -11,6 +11,7 @@ format = "%(asctime)s %(clientip)-15s %(user)-8s %(message)s"
 
 port = 5000
 api_url = f"http://localhost:{port}/"
+api_url = "https://aline-ai--api-dev.modal.run/"
 
 @pytest.fixture
 def article_url():

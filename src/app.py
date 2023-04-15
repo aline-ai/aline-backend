@@ -1,18 +1,38 @@
 import requests
 
-from flask import Flask, request, jsonify
+import modal
+from fastapi import FastAPI
+from pydantic import BaseModel
+from loguru import logger
 
-from .simplify import simplify
-from .autocomplete import autocomplete
+from src.autocomplete import autocomplete
+from src.simplify import simplify
 
-app = Flask(__name__)
+image = modal.Image.debian_slim().pip_install(
+    "openai", 
+    "tiktoken", 
+    "markdownify", 
+    "mistletoe", 
+    "numpy", 
+    "langchain", 
+    "requests", 
+    "readability-lxml", 
+    "loguru"
+)
+web_app = FastAPI()
+stub = modal.Stub(name="api")
 
-@app.route("/", methods=["GET"])
+@web_app.get("/")
 def hello():
     return "Hello World! Make a request to /api with the input in the \"text\" field to see suggested edits."
 
-@app.route("/simplify", methods=["POST"])
-def simplify_api():
+class SimplifyRequest(BaseModel):
+    url: str
+    html: str = ""
+    title: str
+
+@web_app.post("/simplify")
+def simplify_api(request: SimplifyRequest):
     """
     Format:
     {
@@ -22,19 +42,19 @@ def simplify_api():
     }
     Will figure more out later like credentials.
     """
-    obj = request.get_json()
-    url = obj["url"]
-    html = obj.get("html", requests.get(obj["url"]).text)
-    text = simplify(html, obj["title"])
-    result = {
-        "url": obj["url"],
-        "text": text
-    }
-    app.logger.info('Page %s simplified successfully', url)
-    return jsonify(result)
+    url = request.url
+    html = request.html or requests.get(url).text
+    text = simplify(html, request.title) 
+    logger.info('Page %s simplified successfully', url)
+    return {"url": url, "text": text}
 
-@app.route("/autocomplete", methods=["POST"])
-def autocomplete_api():
+class AutocompleteRequest(BaseModel):
+    url: str
+    notes: str = ""
+    context: str = ""
+
+@web_app.post("/autocomplete")
+def autocomplete_api(request: AutocompleteRequest):
     """
     Format:
     {
@@ -43,10 +63,13 @@ def autocomplete_api():
         "context": "<html><body><p>The quick brown fox jumped over the lazy dog.</p></body></html>"",
     }
     """
-    obj = request.get_json()
-    url = obj["url"]
-    notes = obj["notes"]
-    context = obj["context"]
-    return jsonify({
-        "suggestion": autocomplete(url, context, notes)
-    })
+    return {"suggestion": autocomplete(request.url, request.context, request.notes)}
+
+
+@stub.function(
+    image=image, 
+    secret=modal.Secret.from_name("openai")
+)
+@stub.asgi_app(label="api")
+def fastapi_endpoint():
+    return web_app

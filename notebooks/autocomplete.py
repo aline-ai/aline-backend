@@ -13,10 +13,10 @@ from langchain.text_splitter import MarkdownTextSplitter
 
 import openai
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import tiktoken
 
-load_dotenv() 
+# load_dotenv() 
 
 Document = Any
 

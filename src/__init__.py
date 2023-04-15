@@ -1,2 +1,2 @@
 from .simplify import simplify
-from .app import app
+from .autocomplete import autocomplete
