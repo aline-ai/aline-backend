@@ -1,13 +1,12 @@
 import html
-
 import asyncio
 from textwrap import dedent
+
 from markdownify import markdownify
 import mistletoe
 import openai
 from loguru import logger
 import numpy as np
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import MarkdownTextSplitter
 import tiktoken
 
