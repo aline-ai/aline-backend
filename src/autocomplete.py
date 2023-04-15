@@ -1,13 +1,12 @@
-from typing import Any, Iterable
+import asyncio
+from textwrap import dedent
 from markdownify import markdownify
 import mistletoe
 import html
+import openai
 
-from langchain.embeddings.openai import OpenAIEmbeddings, Embeddings
-from langchain.vectorstores import Chroma,  VectorStore
-from langchain.chains import VectorDBQA
-from langchain.llms import OpenAI, OpenAIChat
-from langchain.prompts import load_prompt
+import numpy as np
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import MarkdownTextSplitter
 
 from dotenv import load_dotenv
@@ -15,43 +14,27 @@ import tiktoken
 
 load_dotenv() 
 
-Document = Any
+def chat(messages, **kwargs) -> str:
+    return openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        **kwargs
+    ).choices[0].message.content
 
-class LinearSearchVectorStore(VectorStore):
-    embeddings: Embeddings 
-    texts: list[str] = []
-    vectors: list[list[float]] = []
+async def achat(messages, **kwargs) -> str:
+    return (await openai.ChatCompletion.acreate(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        **kwargs
+    )).choices[0].message.content
 
-    def add_texts(self, texts: Iterable[str], metadatas: list[dict] | None = None, **kwargs: Any) -> list[str]:
-        self.texts.extend(texts)
-        return list(len(self.texts) - len(texts), range(len(self.texts)))
-    
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> list[Document]:
-        vector = self.embeddings.embed_query(query)
-
-    def max_marginal_relevance_search(self, query: str, k: int = 4, fetch_k: int = 20) -> list[Document]:
-        # return super().max_marginal_relevance_search(query, k, fetch_k) 
-        pass
-
-    def max_marginal_relevance_search_by_vector(self, embedding: list[float], k: int = 4, fetch_k: int = 20) -> list[Document]:
-        pass
-
-    def from_texts(
-        self, 
-        texts: list[str],
-        embedding: Embeddings,
-        metadatas: list[dict] | None = None,
-        **kwargs: Any,
-    ) -> VectorStore:
-        self.embeddings = embedding
-        self.add_documents(texts, metadatas)
-        return self
 
 encoding = tiktoken.get_encoding("cl100k_base")
 
 CURSOR_INDICATOR = " CURSOR_INDICATOR"
 def autocomplete(_url, context, notes):
     # TODO: Deal with case where notes is empty
+    max_length_of_completion = 60
 
     # Preprocess
     context_in_md = markdownify(context, heading_style="atx")
@@ -60,30 +43,62 @@ def autocomplete(_url, context, notes):
     text_splitter = MarkdownTextSplitter(chunk_size=2048)
     documents = text_splitter.create_documents([context_in_md])
     
-    llm = OpenAIChat(max_tokens=128, verbose=True)
+    embeddings = OpenAIEmbeddings()
 
-    # set up streaming to cancel at a certain point
-    if len(documents) > 4:
-        # Refactor this mess
-        embeddings = OpenAIEmbeddings()
-        # TODO: Use Qdrant or something that doesn't require like an hour to build
-        docsearch = Chroma.from_documents(documents, embeddings)
-        qa = VectorDBQA.from_chain_type(
-            llm=OpenAI(max_tokens=2048, verbose=True), # Make this also chat or fine-tune curie to do this
-            chain_type="map_reduce", 
-            vectorstore=docsearch, 
-            return_source_documents=True,
-        )
-        qa.combine_documents_chain.combine_document_chain.llm_chain.llm = llm
-        qa.combine_documents_chain.combine_document_chain.llm_chain.llm.model_kwargs = {"stop": ["===END==="]}
-        qa.combine_documents_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/map.yaml")
-        qa.combine_documents_chain.combine_document_chain.llm_chain.prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
-        completion: str = qa({"query": notes_in_md})["result"]
-    else:
-        prompt = load_prompt("src/prompts/autocomplete/reduce.yaml")
-        completion = llm(prompt.format(question=notes_in_md, summaries=context_in_md))
+    notes_vector, *context_vectors = np.array(embeddings.embed_documents([notes_in_md] + [document.page_content for document in documents]))
+
+    # get top 4 documents 
+    context_documents = [documents[i] for i in np.argsort(np.linalg.norm(context_vectors - notes_vector, axis=1))[:4]]
+
+    # Summarize the context in parallel
+    async def extract(content) -> str:
+        return await achat([
+            {"role": "system", "content": "Use the following portion of a long article to see if any of the text is relevant complete the incomplete notes. COPY any relevant text VERBATIM, meaning word-for-word."},
+            {"role": "user", "content": dedent(f"""
+                <article>
+                {content}
+                </article>
+
+                <notes>
+                {notes_in_md}
+                </notes>
+                Relevant text verbatim, if any:
+            """)},
+        ], temperature=0)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    gather = asyncio.gather(*[extract(document.page_content) for document in context_documents])
+    summaries = "\n".join(loop.run_until_complete(gather))
+
+    completion = chat([{
+        "role": "system", 
+        "content": dedent(f"""
+            <summaries>
+            {summaries}
+            </summaries>
+
+            The following are a small section of notes written according to the following:
+            * The notes are based on the context, *not* on prior knowledge
+                * An answer will *not* be written if the answer is not found in the long article
+                * Nothing will be written if nothing is relevant
+            * The notes start at the start token (===START===) and end at the end token (===END===)
+            * Github-style markdown syntax will be used to format the notes
+                * Lists, which start with astericks (*) will be used dominantly to organize the notes
+                * Indents will be used to nest lists
+                * Headers, which start with hashes (#) will be used SPARINGLY to organize the notes
+            * The notes will be elaborate and detailed, but will not generate new section headers
+            * Each line will be kept short, simple and concise, and will not exceed 80 characters
+            * Multiple clauses or sentences will ALWAYS be broken into multiple lines 
+            * Only the next section of notes will be completed
+
+            ===START===
+            {notes_in_md}
+        """)
+    }], max_tokens = max_length_of_completion)
     
-    if len(encoding.encode(completion)) > 100: # If stop sequence was reason of termination
+    
+    if len(encoding.encode(completion)) > int(0.8 * max_length_of_completion): # If stop sequence was reason of termination
         if "\n" in completion:
             completion = completion[:completion.rfind("\n")]
     
