@@ -2,7 +2,7 @@ from requests import post, get
 import logging
 
 import pytest
-from src.autocomplete import autocomplete
+from src.autosuggestion import autosuggestion
 
 from src.simplify import simplify
 
@@ -19,7 +19,7 @@ def article_url():
 
 def test_completion_local(article_url):
     context = simplify(get(article_url).text)
-    data = autocomplete(article_url, context, "<p>Definition of transformer</p><ul><li>")
+    data = autosuggestion(article_url, context, "<p>Definition of transformer</p><ul><li>")
     logger.info(data)
 
 def test_completion(article_url):

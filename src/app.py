@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from loguru import logger
 
-from src.autocomplete import autocomplete
 from src.simplify import simplify
 
 image = modal.Image.debian_slim().pip_install(
@@ -21,7 +20,8 @@ image = modal.Image.debian_slim().pip_install(
     "loguru"
 )
 web_app = FastAPI()
-stub = modal.Stub(name="api")
+stub = modal.Stub("api")
+stub.store = modal.Function.from_name("s3", "store")
 
 @web_app.get("/")
 def hello():
@@ -49,13 +49,13 @@ def simplify_api(request: SimplifyRequest):
     logger.info('Page %s simplified successfully', url)
     return {"url": url, "text": text}
 
-class AutocompleteRequest(BaseModel):
+class AutosuggestRequest(BaseModel):
     url: str
     notes: str = ""
     context: str = ""
 
 @web_app.post("/autocomplete")
-def autocomplete_api(request: AutocompleteRequest):
+def autosuggestion_api(request: AutosuggestRequest):
     """
     Format:
     {
@@ -64,7 +64,8 @@ def autocomplete_api(request: AutocompleteRequest):
         "context": "<html><body><p>The quick brown fox jumped over the lazy dog.</p></body></html>"",
     }
     """
-    return {"suggestion": autocomplete(request.url, request.context, request.notes)}
+    from src.autosuggestion import autosuggestion
+    return {"suggestion": autosuggestion(request.url, request.context, request.notes)}
 
 
 @stub.function(
