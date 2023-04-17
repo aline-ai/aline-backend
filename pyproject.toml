@@ -5,7 +5,7 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = ">3.10.9,<3.12"
+python = ">=3.10.9,<3.12"
 Flask = "^2.2.2"
 python-dotenv = "^0.21.0"
 gunicorn = "^20.1.0"
@@ -13,12 +13,15 @@ readability-lxml = "^0.8.1"
 lxml = "^4.9.2"
 requests = "^2.28.2"
 openai = "^0.27.0"
-langchain = "^0.0.101"
+langchain = "^0.0.139"
 markdownify = "^0.11.6"
 mistletoe = "^1.0.1"
 tiktoken = "^0.3.0"
 pinecone-client = "^2.2.1"
 chromadb = "^0.3.11"
+modal-client = "^0.48.1862"
+anthropic = "^0.2.7"
+boto3 = "^1.26.114"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"

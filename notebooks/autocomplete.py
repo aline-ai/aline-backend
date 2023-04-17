@@ -7,45 +7,18 @@ from langchain.embeddings.openai import OpenAIEmbeddings, Embeddings
 from langchain.vectorstores import Chroma,  VectorStore
 from langchain.chains import VectorDBQA
 from langchain.llms import OpenAI, OpenAIChat
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts import load_prompt
 from langchain.text_splitter import MarkdownTextSplitter
 
-from dotenv import load_dotenv
+import openai
+
+# from dotenv import load_dotenv
 import tiktoken
 
-load_dotenv() 
+# load_dotenv() 
 
 Document = Any
-
-class LinearSearchVectorStore(VectorStore):
-    embeddings: Embeddings 
-    texts: list[str] = []
-    vectors: list[list[float]] = []
-
-    def add_texts(self, texts: Iterable[str], metadatas: list[dict] | None = None, **kwargs: Any) -> list[str]:
-        self.texts.extend(texts)
-        return list(len(self.texts) - len(texts), range(len(self.texts)))
-    
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> list[Document]:
-        vector = self.embeddings.embed_query(query)
-
-    def max_marginal_relevance_search(self, query: str, k: int = 4, fetch_k: int = 20) -> list[Document]:
-        # return super().max_marginal_relevance_search(query, k, fetch_k) 
-        pass
-
-    def max_marginal_relevance_search_by_vector(self, embedding: list[float], k: int = 4, fetch_k: int = 20) -> list[Document]:
-        pass
-
-    def from_texts(
-        self, 
-        texts: list[str],
-        embedding: Embeddings,
-        metadatas: list[dict] | None = None,
-        **kwargs: Any,
-    ) -> VectorStore:
-        self.embeddings = embedding
-        self.add_documents(texts, metadatas)
-        return self
 
 encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -60,7 +33,8 @@ def autocomplete(_url, context, notes):
     text_splitter = MarkdownTextSplitter(chunk_size=2048)
     documents = text_splitter.create_documents([context_in_md])
     
-    llm = OpenAIChat(max_tokens=128, verbose=True)
+    # llm = OpenAIChat(max_tokens=128, verbose=True)
+    llm = ChatOpenAI(max_tokens=128, verbose=True)
 
     # set up streaming to cancel at a certain point
     if len(documents) > 4:
@@ -69,7 +43,8 @@ def autocomplete(_url, context, notes):
         # TODO: Use Qdrant or something that doesn't require like an hour to build
         docsearch = Chroma.from_documents(documents, embeddings)
         qa = VectorDBQA.from_chain_type(
-            llm=OpenAI(max_tokens=2048, verbose=True), # Make this also chat or fine-tune curie to do this
+            # llm=OpenAI(max_tokens=2048, verbose=True), # Make this also chat or fine-tune curie to do this
+            llm=ChatOpenAI(max_tokens=2048, verbose=True), # Make this also chat or fine-tune curie to do this
             chain_type="map_reduce", 
             vectorstore=docsearch, 
             return_source_documents=True,
@@ -97,3 +72,8 @@ def autocomplete(_url, context, notes):
     completed_notes_html = mistletoe.markdown(completed_notes).replace("\n", "")
     _notes_user, notes_completion = completed_notes_html.split(CURSOR_INDICATOR.strip())
     return html.unescape(notes_completion.strip()).replace("<li>", "<li><p>").replace("</li>", "</p></li>")
+
+if __name__ == "__main__":
+    chat = ChatOpenAI()
+    embeddings = OpenAIEmbeddings()
+    

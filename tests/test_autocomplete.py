@@ -2,19 +2,25 @@ from requests import post, get
 import logging
 
 import pytest
+from src.autosuggestion import autosuggestion
 
 from src.simplify import simplify
 
 logger = logging.getLogger(__name__)
 format = "%(asctime)s %(clientip)-15s %(user)-8s %(message)s"
-logging.basicConfig(format=format, level=logging.INFO)
 
 port = 5000
 api_url = f"http://localhost:{port}/"
+api_url = "https://aline-ai--api-dev.modal.run/"
 
 @pytest.fixture
 def article_url():
     return "https://medium.com/inside-machine-learning/what-is-a-transformer-d07dd1fbec04"
+
+def test_completion_local(article_url):
+    context = simplify(get(article_url).text)
+    data = autosuggestion(article_url, context, "<p>Definition of transformer</p><ul><li>")
+    logger.info(data)
 
 def test_completion(article_url):
     context = simplify(get(article_url).text)
