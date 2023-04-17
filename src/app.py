@@ -10,6 +10,7 @@ from src.simplify import simplify
 
 image = modal.Image.debian_slim().pip_install(
     "openai", 
+    "anthropic",
     "tiktoken", 
     "markdownify", 
     "mistletoe", 
@@ -68,7 +69,7 @@ def autocomplete_api(request: AutocompleteRequest):
 
 @stub.function(
     image=image, 
-    secret=modal.Secret.from_name("openai")
+    secrets=[modal.Secret.from_name("openai"), modal.Secret.from_name("anthropic")],
 )
 @stub.asgi_app(label="api")
 def fastapi_endpoint():

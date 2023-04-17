@@ -20,6 +20,7 @@ tiktoken = "^0.3.0"
 pinecone-client = "^2.2.1"
 chromadb = "^0.3.11"
 modal-client = "^0.48.1862"
+anthropic = "^0.2.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"
