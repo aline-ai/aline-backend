@@ -10,7 +10,6 @@ from src.simplify import simplify
 image = modal.Image.debian_slim().pip_install(
     "openai", 
     "anthropic",
-    "tiktoken", 
     "markdownify", 
     "mistletoe", 
     "numpy", 
@@ -22,6 +21,7 @@ image = modal.Image.debian_slim().pip_install(
 web_app = FastAPI()
 stub = modal.Stub("api")
 stub.store = modal.Function.from_name("s3", "store")
+stub.embeddings = modal.Function.from_name("utils", "Embeddings.encode")
 
 @web_app.get("/")
 def hello():

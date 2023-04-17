@@ -2274,7 +2274,7 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10.9,<3.12"
-content-hash = "beb2f45c3223e55c2fa123eb1fa46a672ade130fd3d299bb43b7df4f09a9ab19"
+content-hash = "95cb630ddf397c6c62e1b20f916371cf7e15d292b0382532ac329edeb12c556a"
 
 [metadata.files]
 aiohttp = [

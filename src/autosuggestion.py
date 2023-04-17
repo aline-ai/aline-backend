@@ -1,50 +1,22 @@
 import html
 import asyncio
-import os
 import time
 
 from markdownify import markdownify
 import mistletoe
-import openai
 from loguru import logger
 import numpy as np
-from langchain.text_splitter import MarkdownTextSplitter
 import anthropic
 import modal
 
 from src.prompts.autocomplete_prompts import map_prompt, reduce_prompt
+from src.utils import achat, chat, split_markdown
 
 max_length_of_completion = 100
 chunk_size = 2048
 num_of_chunks = 4
 
-client = anthropic.Client(os.environ.get('ANTHROPIC_API_KEY'))
 stub = modal.Stub("api")
-
-def chat(prompt, **kwargs) -> str:
-    # switch to anthropic
-    return client.completion(
-        prompt=prompt,
-        stop_sequences = [anthropic.HUMAN_PROMPT, "\n</notes>"],
-        model="claude-instant-v1",
-        **kwargs
-    )["completion"]
-
-async def achat(prompt, **kwargs) -> str:
-    return (await client.acompletion(
-        prompt=prompt,
-        stop_sequences = [anthropic.HUMAN_PROMPT, "\n</notes>"],
-        model="claude-instant-v1",
-        **kwargs
-    ))["completion"]
-
-def embeddings(input, **kwargs) -> str:
-    response = openai.Embedding.create(
-        model="text-embedding-ada-002",
-        input=input,
-        **kwargs
-    )
-    return [np.array(data['embedding']) for data in response['data']]
 
 async def extract(content: str, notes: str) -> str:
     return await achat(map_prompt.format(content=content, notes=notes), temperature=0, max_tokens_to_sample=chunk_size)
@@ -67,20 +39,20 @@ def autosuggestion(url, context, notes):
     context_in_md = markdownify(context, heading_style="atx")
     notes_in_md = markdownify(notes, heading_style="atx").rstrip()
 
-    if token_length(context_in_md) > 5000:
-        text_splitter = MarkdownTextSplitter(chunk_size=chunk_size)
-        documents = text_splitter.create_documents([context_in_md])
+    if token_length(context_in_md) > 4096:
+        documents = split_markdown(context_in_md, chunk_size=chunk_size)
 
         logger.info("Fetching embeddings and filtering documents...")
-        notes_vector, *context_vectors = np.array(embeddings([notes_in_md] + [document.page_content for document in documents]))
+        start = time.time()
+        notes_vector, *context_vectors = np.array(stub.app.embeddings.call([notes_in_md] + [document for document in documents]))
+        logger.info("Embeddings took {} seconds".format(time.time() - start))
         context_documents = [documents[i] for i in np.argsort(np.linalg.norm(context_vectors - notes_vector, axis=1))[:min(len(documents), num_of_chunks)]]
 
         logger.info("Summarizing context in parallel...")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        gather = asyncio.gather(*[extract(document.page_content, notes_in_md) for document in context_documents])
+        gather = asyncio.gather(*[extract(document, notes_in_md) for document in context_documents])
         summaries = "\n".join(loop.run_until_complete(gather))
-        logger.info(summaries)
     else:
         logger.info("Using context directly...")
         summaries = context_in_md
