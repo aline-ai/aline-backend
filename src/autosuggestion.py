@@ -13,8 +13,8 @@ from src.prompts.autocomplete_prompts import map_prompt, reduce_prompt
 from src.utils import achat, chat, split_markdown
 
 max_length_of_completion = 100
-chunk_size = 2048
-num_of_chunks = 4
+chunk_size = 1024
+num_of_chunks = 5
 
 stub = modal.Stub("api")
 
@@ -38,28 +38,27 @@ def autosuggestion(url, context, notes):
     # Preprocess
     context_in_md = markdownify(context, heading_style="atx")
     notes_in_md = markdownify(notes, heading_style="atx").rstrip()
+    start = time.time()
 
     if token_length(context_in_md) > 4096:
         documents = split_markdown(context_in_md, chunk_size=chunk_size)
 
-        logger.info("Fetching embeddings and filtering documents...")
-        start = time.time()
+        logger.info(f"Fetching embeddings and filtering documents (t={time.time() - start})...")
         notes_vector, *context_vectors = np.array(stub.app.embeddings.call([notes_in_md] + [document for document in documents]))
-        logger.info("Embeddings took {} seconds".format(time.time() - start))
         context_documents = [documents[i] for i in np.argsort(np.linalg.norm(context_vectors - notes_vector, axis=1))[:min(len(documents), num_of_chunks)]]
 
-        logger.info("Summarizing context in parallel...")
+        logger.info(f"Summarizing context in parallel (t={time.time() - start})...")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         gather = asyncio.gather(*[extract(document, notes_in_md) for document in context_documents])
         summaries = "\n".join(loop.run_until_complete(gather))
     else:
-        logger.info("Using context directly...")
+        logger.info(f"Using context directly (t={time.time() - start})...")
         summaries = context_in_md
 
-    logger.info("Generating suggestion...")
+    logger.info(f"Generating suggestion (t={time.time() - start})...")
     suggestion = construct_notes(notes_in_md, summaries)
-    logger.info("Done completion")
+    logger.info(f"Done completion (t={time.time() - start}). Storing on AWS...")
     stub.app.store.spawn({
         "url": url,
         "context": context,
