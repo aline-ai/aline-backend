@@ -23,6 +23,7 @@ modal-client = "^0.48.1862"
 anthropic = "^0.2.7"
 boto3 = "^1.26.114"
 sentence-transformers = "^2.2.2"
+optimum = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"

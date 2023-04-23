@@ -130,3 +130,5 @@ dmypy.json
 
 notebooks/.chroma
 .chroma
+*.aux
+*.pdf
