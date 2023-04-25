@@ -1,5 +1,6 @@
 import subprocess
 
+from markdownify import markdownify as md
 from pydantic import BaseModel
 from fastapi import Response
 import modal
@@ -13,7 +14,8 @@ image = modal.Image.debian_slim() \
         "mistletoe", 
         "numpy", 
         "requests", 
-        "loguru"
+        "loguru",
+        "markdownify"
     )
 stub = modal.Stub("latex")
 
@@ -37,8 +39,29 @@ def render(request: RenderRequest):
     headers = {'Content-Disposition': 'inline; filename="out.pdf"'}
     return Response(open("tmp.pdf", "rb").read(), headers=headers, media_type='application/pdf')
 
-# @stub.function(image=image)
-# @modal.web_endpoint(method="POST")
-# def render(markdown: str):
-#     pdfl = pdflatex.PDFLaTeX.from_binarystring(, 'out')
-#     pdf, log, cp = pdfl.create_pdf()
+class RenderMarkdownRequest(BaseModel):
+    markdown: str
+
+template = r"""
+\documentclass{article}
+\usepackage{markdown}
+\begin{document}
+\begin{markdown}
+{{markdown}}
+\end{markdown}
+\end{document}
+"""
+
+@stub.function(image=image)
+@modal.web_endpoint(method="POST")
+def render_markdown(request: RenderMarkdownRequest):
+    latex = template.replace("{{markdown}}", request.markdown)
+    return render(RenderRequest(latex=latex))
+
+class RenderHtmlRequest(BaseModel):
+    html: str
+
+@stub.function(image=image)
+@modal.web_endpoint(method="POST")
+def render_html(request: RenderHtmlRequest):
+    return render_markdown(RenderMarkdownRequest(markdown=md(request.html)))
